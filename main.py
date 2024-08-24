@@ -35,7 +35,7 @@ def main():
 	parser_inference.add_argument("-t", "--target", type=str, help="Single inference target", action="store", default="test.png")
 	parser_inference.add_argument("-d", "--datapath", help="Dataset Base Path for latent representation", action="store", default=DEFAULT_BASE)
 	parser_inference.add_argument("-dS", "--datasetname", help="Dataset name for latent representation",type=str, action="store")
-
+	parser_inference.add_argument("-s", "--self-modelling", help="Enable self modelling", action="store_true", type=bool, default=False)
 
 	# Training specific 
 	parser_training = subparsers.add_parser("training", help="Run training")

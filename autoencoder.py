@@ -34,7 +34,6 @@ class Decoder(nn.Module):
 		# Restore back/ upsample information. 
 		self.linear1 = nn.Linear(latent_dimensions, 512) 
 		self.linear2 = nn.Linear(512, 784) 
-		#self.trainable_layers_decoder = [self.linear1, self.linear2]
 		
 	def forward(self, z:torch.Tensor) -> torch.Tensor: 
 		# Test with GELU in both layers. 
@@ -58,15 +57,6 @@ class Autoencoder(nn.Module):
 		z = self.encoder(x) 
 		reconstructed, self_modelling_layer = self.decoder(z)
 		return reconstructed, self_modelling_layer
-		#return self.decoder(z) 
-
-	def self_modelling_loss_ex(self, target_self_modelling_layer:torch.Tensor): 
-		# punish outer layers 
-		reduced_complecity = 0 
-		# punish network for having many non sparse params. How do I "punish" a distribution for not adhering to some set condition? 
-		count = 0 
-		for param in target_self_modelling_layer: 
-			count += 0.1
 
 	def self_modelling_loss(self, target_self_modelling_layer:torch.Tensor): 
 		#target_self_modelling_layer is a linear layer (matrix), got to convert to tensor
@@ -78,8 +68,6 @@ class Autoencoder(nn.Module):
 def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=20, lr:float = 0.01, labeled:bool=False, self_modelling:bool=True): 
 	print("Training with learning rate = " + str(lr))
 	optimizer = torch.optim.Adam(autoencoder.parameters(), lr) 
-	#if self_modelling_loss == True: 
-	#	target_self_modelling_layer = autoencoder.
 	if labeled == False:
 		for epoch in range(0, epochs): 
 			print("Current Epoch: " + str(epoch)) 		
@@ -89,8 +77,6 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 				xHat, target_self_modelling_layer = autoencoder(x) 
 				if self_modelling == True: 
 					loss = ((x - xHat)**2).sum() + autoencoder.self_modelling_loss(target_self_modelling_layer)
-					print("Loss %s", loss)
-					#print("Self loss %s: ", self_modelling)
 				else:
 					loss = ((x - xHat)**2).sum() 
 				# Calc grad 
