@@ -66,11 +66,11 @@ class Autoencoder(nn.Module):
 
 # Validation loss missing. 	
 def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=20, lr:float = 0.01, labeled:bool=False, self_modelling:bool=True): 
-	print("Training with learning rate = " + str(lr))
+	autoencoder.logger.info("Training with learning rate: %s ", lr)
 	optimizer = torch.optim.Adam(autoencoder.parameters(), lr) 
 	if labeled == False:
 		for epoch in range(0, epochs): 
-			print("Current Epoch: " + str(epoch)) 		
+			autoencoder.logger.info("Current Epoch: %s", epoch) 		
 			for x in data: 
 				x = x.to(device) 
 				optimizer.zero_grad() 
@@ -87,7 +87,7 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 			
 	else: 
 		for epoch in range(0, epochs): 
-			print("Current Epoch %", epoch)		
+			autoencoder.logger.info("Current Epoch %d", epoch)		
 			for x, _ in data: 
 				x = x.to(device)
 				optimizer.zero_grad() 

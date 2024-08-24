@@ -35,8 +35,7 @@ def main():
 	parser_inference.add_argument("-t", "--target", type=str, help="Single inference target", action="store", default="test.png")
 	parser_inference.add_argument("-d", "--datapath", help="Dataset Base Path for latent representation", action="store", default=DEFAULT_BASE)
 	parser_inference.add_argument("-dS", "--datasetname", help="Dataset name for latent representation",type=str, action="store")
-	parser_inference.add_argument("-s", "--self-modelling", help="Enable self modelling", action="store_true", type=bool, default=False)
-
+	
 	# Training specific 
 	parser_training = subparsers.add_parser("training", help="Run training")
 	parser_training.add_argument("-w", "--weights", type=str,  help="model weights path", action="store", default="model_weights.pth") 
@@ -45,6 +44,8 @@ def main():
 	parser_training.add_argument("-lr", "--learningrate", type=float, help="Learning rate", action="store", default=0.01)
 	parser_training.add_argument("-b", "--batch-size", type=int, help="Batch size", action="store")
 	parser_training.add_argument("-e", "--epochs", type=int, help="Number of epochs", action="store", default=10) 
+	parser_training.add_argument("-s", "--self-modelling", help="Enable self modelling", action="store_true")
+
 
 	args_main = parser.parse_args()
 	if args_main.command=="training": 
@@ -65,7 +66,7 @@ def main():
 			
 			#pretransformed data, no need to set a transformation.  
 			training_data = torch.utils.data.DataLoader(training_dataset,batch_size=128, num_workers=2, shuffle=True )
-			model = autoencoder.train(autoenc, training_data, epochs=args_training.epochs , lr=args_training.learningrate)
+			model = autoencoder.train(autoenc, training_data, epochs=args_training.epochs , lr=args_training.learningrate, self_modelling= args_training.self_modelling)
 			autoencoder.save(model)
 			
 	elif args_main.command=="inference": 
