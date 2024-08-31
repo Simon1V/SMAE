@@ -10,7 +10,7 @@ import time
 import logging 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
+print(device)
 
 class Encoder(nn.Module): 
 	def __init__(self, latentDims:int): 
@@ -45,8 +45,6 @@ class Decoder(nn.Module):
 
 class Autoencoder(nn.Module): 
 	def __init__(self, latent_dimensions:int, logger): 
-		# FIXME https://stackoverflow.com/questions/20240464/python-logging-file-is-not-working-when-using-logging-basicconfig
-		# log = logging.getLogger("aelogger")
 		assert latent_dimensions > 1 
 		super(Autoencoder, self).__init__() 
 		self.logger = logger 
@@ -61,13 +59,18 @@ class Autoencoder(nn.Module):
 	def self_modelling_loss(self, target_self_modelling_layer:torch.Tensor): 
 		#target_self_modelling_layer is a linear layer (matrix), got to convert to tensor
 		target_self_modelling_layer_tensor = target_self_modelling_layer.weight.view(-1).detach().numpy() 
-		median_deviation = np.median(np.abs(target_self_modelling_layer_tensor - np.median(target_self_modelling_layer_tensor)))	
+		median_deviation = np.median(np.abs(target_self_modelling_layer_tensor - np.median(target_self_modelling_layer_tensor)))
+		print(median_deviation)	
 		return median_deviation  
 
 # Validation loss missing. 	
-def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=20, lr:float = 0.01, labeled:bool=False, self_modelling:bool=True): 
+def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=20, lr:float = 0.01, labeled:bool=False, self_modelling:bool=False): 
 	autoencoder.logger.info("Training with learning rate: %s ", lr)
 	optimizer = torch.optim.Adam(autoencoder.parameters(), lr) 
+	criterion = nn.MSELoss()
+	autoencoder.logger.debug("Dataset labeled: %s", labeled)
+	autoencoder.logger.debug("Self Modelling: %s", self_modelling)
+
 	if labeled == False:
 		for epoch in range(0, epochs): 
 			autoencoder.logger.info("Current Epoch: %s", epoch) 		
@@ -77,22 +80,27 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 				xHat, target_self_modelling_layer = autoencoder(x) 
 				if self_modelling == True: 
 					loss = ((x - xHat)**2).sum() + autoencoder.self_modelling_loss(target_self_modelling_layer)
+					
 				else:
 					loss = ((x - xHat)**2).sum() 
 				# Calc grad 
 				loss.backward() 
 				# Update Weights 
 				optimizer.step() 
+				#print("Loss %f", loss.item())
 		return autoencoder 
 			
 	else: 
 		for epoch in range(0, epochs): 
-			autoencoder.logger.info("Current Epoch %d", epoch)		
+			autoencoder.logger.info("Current Epoch: %s", epoch)		
 			for x, _ in data: 
 				x = x.to(device)
 				optimizer.zero_grad() 
-				xHat = autoencoder(x)
-				loss = ((x-xHat)**2).sum() 
+				xHat, target_self_modelling_layer = autoencoder(x)
+				if self_modelling == True: 
+					loss = ((x-xHat)**2).sum() + autoencoder.self_modelling_loss(target_self_modelling_layer)
+				else: 
+					loss = ((x-xHat)**2).sum()
 				loss.backward() 
 				optimizer.step() 
 		return autoencoder

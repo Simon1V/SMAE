@@ -45,6 +45,7 @@ def main():
 	parser_training.add_argument("-b", "--batch-size", type=int, help="Batch size", action="store")
 	parser_training.add_argument("-e", "--epochs", type=int, help="Number of epochs", action="store", default=10) 
 	parser_training.add_argument("-s", "--self-modelling", help="Enable self modelling", action="store_true")
+	parser_training.add_argument("-l", "--labeled", help="Labeled dataset, e.g. (x,y) tuples.", action="store_true")
 
 
 	args_main = parser.parse_args()
@@ -55,8 +56,8 @@ def main():
 		autoenc.to(device)
 		if args_training.datasetname == "mnist": 
 			log.info("Training on mnist default ds")
-			data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/datasets/mnist', transform=torchvision.transforms.ToTensor(), download=True, train=True), batch_size=128, shuffle=True) 
-			model = autoencoder.train(autoenc, data, epochs=20 , lr=args_training.learningrate)
+			data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/simon/datasets/mnist', transform=torchvision.transforms.ToTensor(), download=True, train=True), batch_size=128, shuffle=True) 
+			model = autoencoder.train(autoenc, data, epochs=20 , lr=args_training.learningrate, labeled=True)
 			autoencoder.save(model)
 		else: 
 			log.info("Training on custom dataset.")
@@ -66,7 +67,7 @@ def main():
 			
 			#pretransformed data, no need to set a transformation.  
 			training_data = torch.utils.data.DataLoader(training_dataset,batch_size=128, num_workers=2, shuffle=True )
-			model = autoencoder.train(autoenc, training_data, epochs=args_training.epochs , lr=args_training.learningrate, self_modelling= args_training.self_modelling)
+			model = autoencoder.train(autoenc, training_data, epochs=args_training.epochs , lr=args_training.learningrate, labeled=args_training.labeled, self_modelling= args_training.self_modelling)
 			autoencoder.save(model)
 			
 	elif args_main.command=="inference": 
