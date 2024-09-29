@@ -34,6 +34,7 @@ class Decoder(nn.Module):
 		# Restore back/ upsample information. 
 		self.linear1 = nn.Linear(latent_dimensions, 512) 
 		self.linear2 = nn.Linear(512, 784) 
+		self.linear2.name = "selfmodellinglayer"
 		
 	def forward(self, z:torch.Tensor) -> torch.Tensor: 
 		# Test with GELU in both layers. 
@@ -58,8 +59,9 @@ class Autoencoder(nn.Module):
 
 	def self_modelling_loss(self, target_self_modelling_layer:torch.Tensor): 
 		#target_self_modelling_layer is a linear layer (matrix), got to convert to tensor
-		target_self_modelling_layer_tensor = target_self_modelling_layer.weight.view(-1).detach().numpy() 
-		median_deviation = np.median(np.abs(target_self_modelling_layer_tensor - np.median(target_self_modelling_layer_tensor)))
+		target_self_modelling_layer_tensor = target_self_modelling_layer.weight.view(-1).cpu().detach().numpy() 
+		#median_deviation = np.median(np.abs(target_self_modelling_layer_tensor - np.median(target_self_modelling_layer_tensor)))
+		median_deviation = np.median(target_self_modelling_layer_tensor)
 		print(median_deviation)	
 		return median_deviation  
 
@@ -79,13 +81,10 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 				optimizer.zero_grad() 
 				xHat, target_self_modelling_layer = autoencoder(x) 
 				if self_modelling == True: 
-					loss = ((x - xHat)**2).sum() + autoencoder.self_modelling_loss(target_self_modelling_layer)
-					
+					loss = criterion(x, xHat) + autoencoder.self_modelling_loss(target_self_modelling_layer)
 				else:
-					loss = ((x - xHat)**2).sum() 
-				# Calc grad 
+					loss = criterion(x, xHat)
 				loss.backward() 
-				# Update Weights 
 				optimizer.step() 
 				#print("Loss %f", loss.item())
 		return autoencoder 
@@ -98,13 +97,12 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 				optimizer.zero_grad() 
 				xHat, target_self_modelling_layer = autoencoder(x)
 				if self_modelling == True: 
-					loss = ((x-xHat)**2).sum() + autoencoder.self_modelling_loss(target_self_modelling_layer)
+					loss = criterion(x, xHat) + autoencoder.self_modelling_loss(target_self_modelling_layer)
 				else: 
-					loss = ((x-xHat)**2).sum()
+					loss = criterion(x, xHat)
 				loss.backward() 
 				optimizer.step() 
 		return autoencoder
-
 
 
 def save(model, name:str="model_weights.pth")->bool: 
@@ -114,10 +112,10 @@ def save(model, name:str="model_weights.pth")->bool:
 
 def load(model, name:str="model_weights.pth")->bool: 
 	if device == "cpu": 
-		model.load_state_dict(torch.load(name, map_location=device))
+		model.load_state_dict(torch.load(name, map_location=device, weights_only=True))
 		return True 
 	elif device == "cuda": 
-		model.load_state_dict(torch.load(name))
+		model.load_state_dict(torch.load(name, weights_only=True))
 		model.to(device)
 		return True 
 	else: 

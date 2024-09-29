@@ -19,7 +19,7 @@ class PlotHelper:
 		assert number_of_batches > 1
 		for i , (x, y) in enumerate(data): 
 			z = autoencoder.encoder(x.to(device))
-			z = z.to(device).detach().numpy()
+			z = z.to(device).cpu().detach().numpy()
 			plt.scatter(z[:, 0], z[:, 1], c=y, cmap='tab10')
 			if i > numberOfBatches: 
 				plt.colorbar() 
@@ -34,13 +34,13 @@ class PlotHelper:
 		assert number_of_batches > 1
 		for i , x in enumerate(data):
 			z = autoencoder.encoder(x.to(device))
-			z = z.to(device).detach().numpy()
+			z = z.to(device).cpu().detach().numpy()
 			plt.scatter(z[:, 0], z[:, 1], cmap='tab10')
 			if i > number_of_batches:
 				plt.colorbar()
 				break
 		manager = plt.get_current_fig_manager()
-		manager.window.showMaximized()
+		#manager.window.showMaximized()
 		plt.savefig("test.png")
 		plt.show()
 
