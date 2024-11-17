@@ -24,7 +24,7 @@ class DSHelper:
 		return normalized_image
 
 	def get_image_by_index2(self, index:int):
-		data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('./datasets', transform=torchvision.transforms.ToTensor(), download=True), batch_size=128, shuffle=True) 
+		data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/simon/datasets/', transform=torchvision.transforms.ToTensor(), download=False), batch_size=128, shuffle=True) 
 		imgs_labels = [imglabel for imglabel in data]
 		return imgs_labels[index][0][0][0]
 		

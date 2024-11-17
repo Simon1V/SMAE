@@ -21,7 +21,7 @@ class PlotHelper:
 			z = autoencoder.encoder(x.to(device))
 			z = z.to(device).cpu().detach().numpy()
 			plt.scatter(z[:, 0], z[:, 1], c=y, cmap='tab10')
-			if i > numberOfBatches: 
+			if i > number_of_batches: 
 				plt.colorbar() 
 				break
 		manager = plt.get_current_fig_manager()

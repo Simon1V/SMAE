@@ -60,10 +60,14 @@ class Autoencoder(nn.Module):
 	def self_modelling_loss(self, target_self_modelling_layer:torch.Tensor): 
 		#target_self_modelling_layer is a linear layer (matrix), got to convert to tensor
 		target_self_modelling_layer_tensor = target_self_modelling_layer.weight.view(-1).cpu().detach().numpy() 
-		#median_deviation = np.median(np.abs(target_self_modelling_layer_tensor - np.median(target_self_modelling_layer_tensor)))
 		median_deviation = np.median(target_self_modelling_layer_tensor)
 		print(median_deviation)	
 		return median_deviation  
+
+	# Add "punishment" for weight distributions to 
+	def self_modelling_loss_2(self, target_self_modelling_layer:torch.Tensor): 
+		target_self_modelling_layer_tensor = target_self_modelling_layer.weight.view(-1).cpu().detach().numpy() 
+		
 
 # Validation loss missing. 	
 def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=20, lr:float = 0.01, labeled:bool=False, self_modelling:bool=False): 
@@ -73,11 +77,15 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 	autoencoder.logger.debug("Dataset labeled: %s", labeled)
 	autoencoder.logger.debug("Self Modelling: %s", self_modelling)
 
+	epoch_loss = 0.0 
+	batch_loss = 0.0 
+	
 	if labeled == False:
 		for epoch in range(0, epochs): 
-			autoencoder.logger.info("Current Epoch: %s", epoch) 		
+			autoencoder.logger.info("Current Epoch: %s", epoch) 	
 			for x in data: 
-				x = x.to(device) 
+				x = x.to(device)
+				#print(x.size(0))	 
 				optimizer.zero_grad() 
 				xHat, target_self_modelling_layer = autoencoder(x) 
 				if self_modelling == True: 
@@ -86,7 +94,13 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 					loss = criterion(x, xHat)
 				loss.backward() 
 				optimizer.step() 
-				#print("Loss %f", loss.item())
+				batch_loss = batch_loss + loss.item()
+				print("Item loss: %.3f", loss.item() )
+				#  running_loss += loss.item() * inputs.size(0)
+				# but the input doesn't have a shape which includes the batches as first arg, just single imgs, so no use here. 
+			print("Batch Loss: %.5f" % (batch_loss / len(data)))
+			
+			batch_loss = 0.0 
 		return autoencoder 
 			
 	else: 
@@ -102,6 +116,9 @@ def train(autoencoder:Autoencoder, data:torch.utils.data.DataLoader, epochs:int=
 					loss = criterion(x, xHat)
 				loss.backward() 
 				optimizer.step() 
+				batch_loss = batch_loss + loss.item()
+			print("Batch Loss: %.5f" % (batch_loss / len(data)))
+			batch_loss = 0.0 
 		return autoencoder
 
 

@@ -54,10 +54,10 @@ def main():
 		args_training, _ = parser_training.parse_known_args()
 		autoenc = autoencoder.Autoencoder(args_main.latent_dimension, log) 
 		autoenc.to(device)
-		if args_training.datasetname == "mnist": 
+		if args_training.datasetname.lower() == "mnist": 
 			log.info("Training on mnist default ds")
-			data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/simon/datasets/mnist', transform=torchvision.transforms.ToTensor(), download=True, train=True), batch_size=128, shuffle=True) 
-			model = autoencoder.train(autoenc, data, epochs=20 , lr=args_training.learningrate, labeled=True)
+			data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/simon/datasets/', transform=torchvision.transforms.ToTensor(), download=True, train=True), batch_size=128, shuffle=True) 
+			model = autoencoder.train(autoenc, data, epochs=20 , lr=args_training.learningrate, labeled=True, self_modelling=args_training.self_modelling)
 			autoencoder.save(model)
 		else: 
 			log.info("Training on custom dataset.")
@@ -102,12 +102,14 @@ def main():
 		# make it possible to plot non mnist data. 	
 		elif args_inference.mode == "L":
 			plthelper = plothelper.PlotHelper() 
-			#training_data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/datasets', transform=torchvision.transforms.ToTensor(), download=True), batch_size=128, shuffle=True)
-			ds_relative_path = os.path.join(args_inference.datapath, args_inference.datasetname)
-			training_dataset = datasethelper.DSCustomGeneral(ds_relative_path)
-			training_data = torch.utils.data.DataLoader(training_dataset,batch_size=64, num_workers=2, shuffle=True )
-
-			plthelper.plot_latent_exp(autoenc, training_data)
+			if args_inference.datasetname.lower() == "mnist":
+				training_data = torch.utils.data.DataLoader(torchvision.datasets.MNIST('/home/datasets', transform=torchvision.transforms.ToTensor(), download=True), batch_size=128, shuffle=True)
+				plthelper.plot_latent(autoenc, training_data)
+			else: 
+				ds_relative_path = os.path.join(args_inference.datapath, args_inference.datasetname)
+				training_dataset = datasethelper.DSCustomGeneral(ds_relative_path)
+				training_data = torch.utils.data.DataLoader(training_dataset,batch_size=64, num_workers=2, shuffle=True )
+				plthelper.plot_latent_exp(autoenc, training_data)
 		
 		else: 
 			log.error("Invalid mode specified.")
